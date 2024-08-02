@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:security_center/app_permissions/snapd_interface.dart';
 import 'package:security_center/services/app_permissions_service.dart';
+import 'package:snapd/snapd.dart';
 import 'package:ubuntu_service/ubuntu_service.dart';
 
 export 'package:security_center/services/app_permissions_service.dart';
@@ -36,8 +37,20 @@ class PromptingStatusModel extends _$PromptingStatusModel {
 }
 
 @riverpod
-Future<List<SnapdRule>> rules(RulesRef ref) =>
-    getService<AppPermissionsService>().getRules();
+Stream<List<SnapdRule>> rules(RulesRef ref) async* {
+  final service = getService<AppPermissionsService>();
+  yield await service.getRules();
+  while (true) {
+    final notices = await getService<SnapdClient>().getNotices(
+      types: [SnapdNoticeType.interfacesRequestsRuleUpdate],
+      after: DateTime.now(),
+      timeout: '10s',
+    );
+    if (notices.isNotEmpty) {
+      yield await service.getRules();
+    }
+  }
+}
 
 @riverpod
 Future<Map<SnapdInterface, int>> interfaceSnapCounts(
