@@ -59,6 +59,7 @@ static void my_application_activate(GApplication* application) {
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 
+  gtk_window_present(window);
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
 
